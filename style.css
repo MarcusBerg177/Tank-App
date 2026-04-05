@@ -199,7 +199,7 @@ select:focus {
   margin-bottom: 0.5rem;
 }
 
-/* --- NEUES LAYOUT: 3 SPALTEN --- */
+//* --- NEUES LAYOUT: 3 SPALTEN --- */
 .app-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -209,20 +209,40 @@ select:focus {
   padding: 1rem;
 }
 
-/* Auf mobilen Geräten: Eingabe immer oben! */
+/* --- MOBILE OPTIMIERUNG (Handy, Tablets bis 1023px) --- */
 @media (max-width: 1023px) {
   .center-col {
     order: 1;
-  } /* Eingabe */
+    /* Die Eingabemaske klebt beim Scrollen am oberen Rand */
+    position: sticky;
+    top: 0;
+    z-index: 100; /* Stellt sicher, dass die Karte über den Ergebnissen liegt */
+    background-color: var(
+      --bg-color
+    ); /* Vermeidet durchsichtige Karten beim Scrollen */
+    padding-top: 0.5rem;
+  }
+
   .left-col {
     order: 2;
-  } /* Top 20 */
+  }
   .right-col {
     order: 3;
-  } /* Top 10 */
+  }
+
+  /* Hebt das Row-Layout für Straße/Nummer und Verbrauch/Tankmenge auf */
+  .row {
+    flex-direction: column;
+    gap: 0; /* Felder liegen direkt untereinander */
+  }
+
+  /* Macht die Felder wieder 100% breit auf dem Handy */
+  .input-group[style*='flex'] {
+    flex: 1 !important;
+  }
 }
 
-/* Auf großen Bildschirmen: 3 Spalten (Top 20 | Eingabe | Top 10) */
+/* --- PC OPTIMIERUNG (ab 1024px Breite) --- */
 @media (min-width: 1024px) {
   .app-layout {
     grid-template-columns: 1fr 400px 1fr;
@@ -247,7 +267,6 @@ select:focus {
   margin-bottom: 0.5rem;
 }
 
-/* Kleines Feintuning für die berechneten Ergebnisse */
 .total-price-highlight {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
