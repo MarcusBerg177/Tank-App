@@ -1,5 +1,5 @@
 // Tank-App/switch.js
-const CACHE_NAME = 'tanken-cache-v1'; // WIEDER ERHÖHT!
+const CACHE_NAME = 'tanken-cache-v2'; // WIEDER ERHÖHT!
 const urlsToCache = [
   './index.html',
   './style.css',
