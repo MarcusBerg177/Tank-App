@@ -1,0 +1,257 @@
+/* Tank-App/style.css */
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg-color: #f3f4f6;
+  --card-bg: #ffffff;
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --border-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  padding-bottom: 2rem;
+}
+
+header {
+  background-color: var(--primary);
+  color: white;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.card {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+label {
+  font-size: 0.875rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-muted);
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+input,
+select {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Loader */
+.hidden {
+  display: none !important;
+}
+
+#loader {
+  text-align: center;
+  padding: 2rem;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Result Cards */
+.result-card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.result-card.is-favorite {
+  border-left-color: #f59e0b; /* Orange für Favoriten */
+}
+
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.station-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.station-price {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.station-details {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.fav-checkbox {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+}
+
+/* Geteilte Ansicht (Grid) */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Auf Handys: Untereinander */
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .results-grid {
+    grid-template-columns: 1fr 1fr; /* Am PC: Nebeneinander */
+  }
+}
+
+.station-address {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+/* --- NEUES LAYOUT: 3 SPALTEN --- */
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Auf mobilen Geräten: Eingabe immer oben! */
+@media (max-width: 1023px) {
+  .center-col {
+    order: 1;
+  } /* Eingabe */
+  .left-col {
+    order: 2;
+  } /* Top 20 */
+  .right-col {
+    order: 3;
+  } /* Top 10 */
+}
+
+/* Auf großen Bildschirmen: 3 Spalten (Top 20 | Eingabe | Top 10) */
+@media (min-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 1fr 400px 1fr;
+    align-items: start;
+  }
+  .left-col {
+    order: 1;
+  }
+  .center-col {
+    order: 2;
+    position: sticky; /* Die Eingabemaske bleibt beim Scrollen im Bild */
+    top: 2rem;
+  }
+  .right-col {
+    order: 3;
+  }
+}
+
+.station-address {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+/* Kleines Feintuning für die berechneten Ergebnisse */
+.total-price-highlight {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #d1d5db;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
