@@ -10,7 +10,7 @@
     <title>Smart Tanken</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#1a1b1e" />
   </head>
   <body>
     <header>
@@ -18,81 +18,125 @@
     </header>
 
     <main class="app-layout">
-      <div class="column left-col">
-        <h2 id="title-raw" class="hidden">Top 20 (Reiner Preis)</h2>
-        <div id="rawResultsList"></div>
+      <div class="filter-container">
+        <button id="toggleFilterBtn" class="outline-btn">
+          ▲ Suchfilter einklappen
+        </button>
+
+        <div id="filterSection" class="card input-section">
+          <div class="row">
+            <div class="input-group" style="flex: 0.8">
+              <label for="street">Straße</label>
+              <input
+                type="text"
+                id="street"
+                placeholder="z.B. Hauptstraße"
+                value="Hauptstraße"
+              />
+            </div>
+            <div class="input-group" style="flex: 0.2">
+              <label for="number">Nr.</label>
+              <input type="text" id="number" placeholder="35" value="35" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group" style="flex: 0.4">
+              <label for="zip">PLZ</label>
+              <input type="text" id="zip" value="26842" placeholder="26842" />
+            </div>
+            <div class="input-group" style="flex: 0.6">
+              <label for="city">Ort</label>
+              <input
+                type="text"
+                id="city"
+                value="Ostrhauderfehn"
+                placeholder="Ostrhauderfehn"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label for="consumption">Verbrauch (L/100km)</label>
+              <input type="number" id="consumption" value="6.6" step="0.1" />
+            </div>
+            <div class="input-group">
+              <label for="tankAmount">Tankmenge (Liter)</label>
+              <input type="number" id="tankAmount" value="32" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label for="fuelType">Sorte</label>
+              <select id="fuelType">
+                <option value="e5">Super E5</option>
+                <option value="e10" selected>Super E10</option>
+                <option value="diesel">Diesel</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="radius">Radius (km)</label>
+              <input type="number" id="radius" value="14" />
+            </div>
+          </div>
+          <button id="calcBtn" class="cta-button">Preise abrufen</button>
+        </div>
       </div>
 
-      <div class="column center-col card input-section">
-        <h2>Fahrzeug & Ort</h2>
-        <div class="row">
-          <div class="input-group" style="flex: 0.8">
-            <label for="street">Straße</label>
-            <input type="text" id="street" placeholder="z.B. Hauptstraße" />
-          </div>
-          <div class="input-group" style="flex: 0.2">
-            <label for="number">Nr.</label>
-            <input type="text" id="number" placeholder="37" />
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-group" style="flex: 0.4">
-            <label for="zip">PLZ</label>
-            <input type="text" id="zip" value="26842" placeholder="26842" />
-          </div>
-          <div class="input-group" style="flex: 0.6">
-            <label for="city">Ort</label>
-            <input
-              type="text"
-              id="city"
-              value="Ostrhauderfehn"
-              placeholder="Ostrhauderfehn"
-            />
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-group">
-            <label for="consumption">Verbrauch (L/100km)</label>
-            <input type="number" id="consumption" value="6.6" step="0.1" />
-          </div>
-          <div class="input-group">
-            <label for="tankAmount">Tankmenge (Liter)</label>
-            <input type="number" id="tankAmount" value="30" />
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-group">
-            <label for="fuelType">Sorte</label>
-            <select id="fuelType">
-              <option value="e5">Super E5</option>
-              <option value="e10" selected>Super E10</option>
-              <option value="diesel">Diesel</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <label for="radius">Radius (km)</label>
-            <input type="number" id="radius" value="15" />
-          </div>
-        </div>
-        <button id="calcBtn" class="primary-btn">Preise berechnen</button>
-
-        <div id="loader" class="hidden" style="margin-top: 1rem">
-          <div class="spinner"></div>
-          <p>Suche Tankstellen...</p>
-        </div>
-        <div
-          id="loader-calc"
-          class="hidden"
-          style="margin-top: 1rem; color: var(--primary)"
+      <div class="tabs-container">
+        <button
+          class="tab-btn active"
+          data-target="tab-raw"
+          style="font-size: 0.85rem"
         >
-          <div class="spinner"></div>
-          <p>Berechne parallele Routen für echte Kosten...</p>
+          Preis vor Ort
+        </button>
+        <button
+          class="tab-btn"
+          data-target="tab-calc"
+          style="font-size: 0.85rem"
+        >
+          Gesamtpreis inkl. Fahrt
+        </button>
+        <button
+          class="tab-btn"
+          data-target="tab-fav"
+          style="font-size: 0.85rem"
+        >
+          Favoriten
+        </button>
+      </div>
+
+      <div
+        id="loader"
+        class="hidden text-center"
+        style="margin: 2rem 0; color: var(--accent)"
+      >
+        <div class="spinner"></div>
+        <p id="loader-text">Suche Tankstellen...</p>
+      </div>
+
+      <div id="tab-raw" class="tab-content active">
+        <div id="rawResultsList">
+          <p class="text-center text-muted" style="margin-top: 2rem">
+            Bitte Suche starten.
+          </p>
         </div>
       </div>
 
-      <div class="column right-col">
-        <h2 id="title-calc" class="hidden">Top 10 (Echte Kosten)</h2>
-        <div id="calcResultsList"></div>
+      <div id="tab-calc" class="tab-content">
+        <div id="calcResultsList">
+          <p class="text-center text-muted" style="margin-top: 2rem">
+            Echte Kosten werden nach dem Suchen berechnet.
+          </p>
+        </div>
+      </div>
+
+      <div id="tab-fav" class="tab-content">
+        <div id="favResultsList">
+          <p class="text-center text-muted" style="margin-top: 2rem">
+            Noch keine Favoriten gespeichert.
+          </p>
+        </div>
       </div>
     </main>
 

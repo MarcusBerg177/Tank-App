@@ -1,60 +1,113 @@
 /* Tank-App/style.css */
+/* --- GLOBALES DESIGN --- */
+
 :root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --bg-color: #f3f4f6;
-  --card-bg: #ffffff;
-  --text-main: #1f2937;
-  --text-muted: #6b7280;
-  --border-radius: 12px;
+  --bg-color: #1a1b1e;
+  --card-bg: #25262b;
+  --text-main: #e1e3e5;
+  --text-muted: #909296;
+  --accent: #4dabf7;
+  --accent-hover: #339af0;
+  --border-radius: 8px;
+  --transition: all 0.3s ease-in-out;
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
 }
 
 body {
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   background-color: var(--bg-color);
   color: var(--text-main);
   padding-bottom: 2rem;
 }
 
 header {
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--card-bg);
+  color: var(--accent);
   padding: 1.5rem 1rem;
   text-align: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
-main {
-  max-width: 600px;
+.text-center {
+  text-align: center;
+}
+.text-muted {
+  color: var(--text-muted);
+}
+
+.app-layout {
+  max-width: 800px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
 }
 
+/* --- KARTEN & BUTTONS --- */
 .card {
   background-color: var(--card-bg);
   padding: 1.5rem;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
 }
 
-h2 {
-  font-size: 1.25rem;
+.outline-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 600;
   margin-bottom: 1rem;
-  color: var(--text-main);
+  transition: var(--transition);
 }
 
+.outline-btn:hover {
+  background-color: rgba(77, 171, 247, 0.1);
+}
+
+.cta-button {
+  width: 100%;
+  padding: 12px 30px;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+}
+
+.cta-button:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(51, 154, 240, 0.4);
+}
+
+/* --- EINGABEFELDER --- */
 .row {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0;
+}
+@media (min-width: 600px) {
+  .row {
+    flex-direction: row;
+    gap: 1rem;
+  }
 }
 
 .input-group {
@@ -62,115 +115,104 @@ h2 {
   display: flex;
   flex-direction: column;
   margin-bottom: 1rem;
-  min-width: 0;
 }
 
 label {
-  font-size: 0.875rem;
-  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  white-space: normal;
-  word-wrap: break-word;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
 }
 
 input,
 select {
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  border: 1px solid #373a40;
+  border-radius: 5px;
   outline: none;
   transition: border-color 0.2s;
 }
-
 input:focus,
 select:focus {
-  border-color: var(--primary);
+  border-color: var(--accent);
 }
 
-.primary-btn {
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--primary);
-  color: white;
+/* --- TABS --- */
+.tabs-container {
+  display: flex;
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 1rem 0.5rem;
+  background: transparent;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: bold;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
 }
 
-.primary-btn:hover {
-  background-color: var(--primary-hover);
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  background-color: rgba(77, 171, 247, 0.05);
 }
 
-/* Loader */
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
 .hidden {
   display: none !important;
 }
 
-#loader {
-  text-align: center;
-  padding: 2rem;
-}
-
-.spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--primary);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem auto;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Result Cards */
+/* --- ERGEBNIS-KARTEN --- */
 .result-card {
   background-color: var(--card-bg);
   border-radius: var(--border-radius);
-  padding: 1rem;
+  padding: 1.25rem;
   margin-bottom: 1rem;
-  border-left: 4px solid var(--primary);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #373a40;
   position: relative;
+  box-shadow: var(--shadow-md);
 }
 
 .result-card.is-favorite {
-  border-left-color: #f59e0b; /* Orange für Favoriten */
+  border-left-color: var(--accent);
 }
 
 .station-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-}
-
-.station-name {
-  font-weight: bold;
+  font-weight: 600;
   font-size: 1.1rem;
+  color: #fff;
+  margin-bottom: 0.2rem;
 }
-
-.station-price {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--primary);
-}
-
-.station-details {
-  font-size: 0.875rem;
+.station-address {
+  font-size: 0.85rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+.price-neon {
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.total-price-highlight {
+  border-top: 1px dashed #373a40;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  color: #fff;
 }
 
 .fav-checkbox {
@@ -178,99 +220,34 @@ select:focus {
   top: 1rem;
   right: 1rem;
   cursor: pointer;
-}
-
-/* Geteilte Ansicht (Grid) */
-.results-grid {
-  display: grid;
-  grid-template-columns: 1fr; /* Auf Handys: Untereinander */
-  gap: 2rem;
-}
-
-@media (min-width: 768px) {
-  .results-grid {
-    grid-template-columns: 1fr 1fr; /* Am PC: Nebeneinander */
-  }
-}
-
-.station-address {
-  font-size: 0.85rem;
   color: var(--text-muted);
-  margin-bottom: 0.5rem;
+}
+.fav-checkbox input {
+  display: none;
+}
+.fav-checkbox .star {
+  font-size: 1.5rem;
+  transition: color 0.2s;
+}
+.fav-checkbox input:checked + .star {
+  color: var(--accent);
 }
 
-//* --- NEUES LAYOUT: 3 SPALTEN --- */
-.app-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem;
+/* --- SPINNER --- */
+.spinner {
+  border: 3px solid #373a40;
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 0.5rem auto;
 }
-
-/* --- MOBILE OPTIMIERUNG (Handy, Tablets bis 1023px) --- */
-@media (max-width: 1023px) {
-  .center-col {
-    order: 1;
-    /* Die Eingabemaske klebt beim Scrollen am oberen Rand */
-    position: sticky;
-    top: 0;
-    z-index: 100; /* Stellt sicher, dass die Karte über den Ergebnissen liegt */
-    background-color: var(
-      --bg-color
-    ); /* Vermeidet durchsichtige Karten beim Scrollen */
-    padding-top: 0.5rem;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-
-  .left-col {
-    order: 2;
+  100% {
+    transform: rotate(360deg);
   }
-  .right-col {
-    order: 3;
-  }
-
-  /* Hebt das Row-Layout für Straße/Nummer und Verbrauch/Tankmenge auf */
-  .row {
-    flex-direction: column;
-    gap: 0; /* Felder liegen direkt untereinander */
-  }
-
-  /* Macht die Felder wieder 100% breit auf dem Handy */
-  .input-group[style*='flex'] {
-    flex: 1 !important;
-  }
-}
-
-/* --- PC OPTIMIERUNG (ab 1024px Breite) --- */
-@media (min-width: 1024px) {
-  .app-layout {
-    grid-template-columns: 1fr 400px 1fr;
-    align-items: start;
-  }
-  .left-col {
-    order: 1;
-  }
-  .center-col {
-    order: 2;
-    position: sticky; /* Die Eingabemaske bleibt beim Scrollen im Bild */
-    top: 2rem;
-  }
-  .right-col {
-    order: 3;
-  }
-}
-
-.station-address {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.total-price-highlight {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed #d1d5db;
-  color: var(--primary);
-  font-size: 1.1rem;
 }

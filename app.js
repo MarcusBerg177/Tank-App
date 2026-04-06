@@ -1,15 +1,57 @@
-// Tank-App/app.js
+// // Pfad: Tank-App/app.js
 // --- DEINE API KEYS ---
 const TANKERKOENIG_API_KEY = 'f518c5a2-e10a-46fc-8cca-e527353cfa2f'.trim();
 const ORS_API_KEY =
   'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjFjNzYzZjM2NTVjYjQxOWM4ZTI1NmVjNGY4NTdjODZhIiwiaCI6Im11cm11cjY0In0='.trim();
 
+// Favoriten laden und sofort fehlerhafte/alte Einträge (reine Strings) aussortieren!
+let rawFavs = JSON.parse(localStorage.getItem('favStationsData')) || [];
+let favorites = rawFavs.filter(
+  (f) => typeof f === 'object' && f.id && f.price !== undefined
+);
+
+let currentRawStations = [];
+let currentCalcStations = [];
+
 document.getElementById('calcBtn').addEventListener('click', startCalculation);
+document
+  .getElementById('toggleFilterBtn')
+  .addEventListener('click', toggleFilter);
 
-let favorites = JSON.parse(localStorage.getItem('favStations')) || [];
+// Favoriten direkt beim Start anzeigen
+document.addEventListener('DOMContentLoaded', () => {
+  updateFavoritesTab();
+});
 
+function toggleFilter() {
+  const filter = document.getElementById('filterSection');
+  const btn = document.getElementById('toggleFilterBtn');
+  filter.classList.toggle('hidden');
+  if (filter.classList.contains('hidden')) {
+    btn.innerText = '▼ Suchfilter & Fahrzeug anpassen';
+  } else {
+    btn.innerText = '▲ Suchfilter einklappen';
+  }
+}
+
+// Tab Switching
+document.querySelectorAll('.tab-btn').forEach((button) => {
+  button.addEventListener('click', () => {
+    document
+      .querySelectorAll('.tab-btn')
+      .forEach((btn) => btn.classList.remove('active'));
+    document
+      .querySelectorAll('.tab-content')
+      .forEach((content) => content.classList.remove('active'));
+
+    button.classList.add('active');
+    const targetId = button.getAttribute('data-target');
+    document.getElementById(targetId).classList.add('active');
+  });
+});
+
+// --- HAUPTBERECHNUNG ---
 async function startCalculation() {
-  // drei separate Felder
   const street = document.getElementById('street').value.trim();
   const number = document.getElementById('number').value.trim();
   const zip = document.getElementById('zip').value.trim();
@@ -20,112 +62,117 @@ async function startCalculation() {
   const fuelType = document.getElementById('fuelType').value;
   const radius = document.getElementById('radius').value;
 
-  // Abbruch-Check: Mindestens PLZ oder Ort muss da sein
   if (!zip && !city) {
-    alert('Bitte gib zumindest eine PLZ oder einen Ort ein.');
+    alert('Bitte PLZ oder Ort angeben.');
     return;
   }
 
-  showLoader(true, false);
-  document.getElementById('title-raw').classList.add('hidden');
-  document.getElementById('title-calc').classList.add('hidden');
+  const filterSection = document.getElementById('filterSection');
+  if (!filterSection.classList.contains('hidden')) {
+    toggleFilter();
+  }
+
+  setLoader(true, 'Frage Markttransparenzstelle ab...');
   document.getElementById('rawResultsList').innerHTML = '';
   document.getElementById('calcResultsList').innerHTML = '';
 
   try {
-    // 1. Text zu Koordinaten (mit den neuen 3 Parametern)
     const coords = await geocodeLocation(street, number, zip, city);
 
-    // 2. Tankstellen abrufen
     const rawStations = await fetchStations(
       coords.lat,
       coords.lng,
       radius,
       fuelType
     );
-    const stations = rawStations.filter(
-      (station) => station.price !== null && station.isOpen
+    currentRawStations = rawStations.filter(
+      (s) => s.price !== null && s.isOpen
     );
 
-    if (stations.length === 0)
-      throw new Error(
-        'Keine geöffneten Tankstellen im gewählten Umkreis gefunden.'
-      );
+    if (currentRawStations.length === 0)
+      throw new Error('Keine geöffneten Tankstellen gefunden.');
 
-    // 3. Top 20 isolieren und rendern
-    const top20Raw = stations.slice(0, 20);
-    document.getElementById('title-raw').classList.remove('hidden');
-    renderList(top20Raw, 'rawResultsList', false);
+    // 1. REITER: Bester Preis (Modus: 'raw')
+    const top20Raw = currentRawStations.slice(0, 20);
+    renderList(top20Raw, 'rawResultsList', 'raw');
 
-    showLoader(false, true);
+    // 3. REITER: Favoriten updaten (falls sich Preise geändert haben)
+    updateFavoritesTab();
 
-    // 4. Parallele Routenberechnung für die echten Kosten
-    const routePromises = top20Raw.map(async (station) => {
+    // 2. REITER: Realer Preis (Modus: 'calc')
+    setLoader(true, 'Berechne echte Fahrstrecken...');
+    const finalResults = [];
+
+    for (let station of top20Raw) {
+      // Notfall-Plan: Tankerkönig liefert die Luftlinie (station.dist) direkt mit.
+      // Wir multiplizieren mit 1.3 als grobe Schätzung für die Straßenführung.
+      let routeDistKm = station.dist * 1.3;
+      let isFallback = true;
+
       try {
         const distanceInfo = await calculateRoute(coords, {
           lat: station.lat,
           lng: station.lng,
         });
-        const totalDriveKm = (distanceInfo.distance / 1000) * 2; // HIN & ZURÜCK
-        const fuelCost = tankAmount * station.price;
-        const driveCost = (consumption / 100) * totalDriveKm * station.price;
-        const trueTotal = fuelCost + driveCost;
-
-        return { ...station, totalDriveKm, fuelCost, driveCost, trueTotal };
+        if (distanceInfo.distance) {
+          routeDistKm = distanceInfo.distance / 1000;
+          isFallback = false;
+        }
       } catch (err) {
-        return null;
+        console.warn(
+          `ORS Limit bei ${station.brand}. Nutze Luftlinien-Schätzung.`
+        );
       }
-    });
 
-    const resultsArray = await Promise.all(routePromises);
-    const finalResults = resultsArray.filter((r) => r !== null);
+      const totalDriveKm = routeDistKm * 2; // Hin und Zurück
+      const fuelCost = tankAmount * station.price;
+      const driveCost = (consumption / 100) * totalDriveKm * station.price;
 
-    // Nach echten Kosten sortieren und Top 10 isolieren
+      finalResults.push({
+        ...station,
+        routeDistKm,
+        totalDriveKm,
+        fuelCost,
+        driveCost,
+        trueTotal: fuelCost + driveCost,
+        isFallback,
+      });
+
+      // 150ms Pause schont die API
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+
     finalResults.sort((a, b) => a.trueTotal - b.trueTotal);
-    const top10Calc = finalResults.slice(0, 10);
+    currentCalcStations = finalResults.slice(0, 10);
 
-    // Rechte Spalte rendern
-    document.getElementById('title-calc').classList.remove('hidden');
-    renderList(top10Calc, 'calcResultsList', true);
+    renderList(currentCalcStations, 'calcResultsList', 'calc');
   } catch (error) {
     alert(error.message);
   } finally {
-    showLoader(false, false);
+    setLoader(false);
   }
 }
 
-// --- API Aufrufe ---
+// --- API FUNKTIONEN ---
 async function geocodeLocation(street, number, zip, city) {
-  // Wir bauen den perfekten Such-String für die API
   let queryParts = [];
-
   if (street) {
     let streetPart = street;
     if (number) streetPart += ' ' + number;
     queryParts.push(streetPart);
   }
-
   let cityPart = [];
   if (zip) cityPart.push(zip);
   if (city) cityPart.push(city);
   if (cityPart.length > 0) queryParts.push(cityPart.join(' '));
 
-  // Ergibt z.B.: "Hauptstraße 37, 26842 Ostrhauderfehn"
-  const cleanSearchQuery = queryParts.join(', ');
-  console.log('Sende an ORS:', cleanSearchQuery);
-
-  // API-Aufruf (boundary.country=DE verhindert Suchen in Österreich/Schweiz etc.)
+  const cleanQuery = queryParts.join(', ');
   const res = await fetch(
-    `https://api.openrouteservice.org/geocode/search?api_key=${ORS_API_KEY}&text=${encodeURIComponent(cleanSearchQuery)}&boundary.country=DE`
+    `https://api.openrouteservice.org/geocode/search?api_key=${ORS_API_KEY}&text=${encodeURIComponent(cleanQuery)}&boundary.country=DE`
   );
   const data = await res.json();
-
-  if (!data.features || data.features.length === 0) {
-    throw new Error(
-      `Die Adresse '${cleanSearchQuery}' wurde nicht gefunden. Bitte prüfe die Schreibweise.`
-    );
-  }
-
+  if (!data.features || data.features.length === 0)
+    throw new Error(`Adresse '${cleanQuery}' nicht gefunden.`);
   return {
     lng: data.features[0].geometry.coordinates[0],
     lat: data.features[0].geometry.coordinates[1],
@@ -145,84 +192,111 @@ async function calculateRoute(start, end) {
   const res = await fetch(
     `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${ORS_API_KEY}&start=${start.lng},${start.lat}&end=${end.lng},${end.lat}`
   );
+  if (!res.ok) throw new Error('API Block / Limit erreicht');
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return { distance: data.features[0].properties.segments[0].distance };
 }
 
-// --- UI & Helper ---
-function renderList(results, containerId, isCalculated) {
+// --- UI FUNKTIONEN ---
+function renderList(results, containerId, mode) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
 
+  if (results.length === 0) {
+    container.innerHTML =
+      '<p class="text-center text-muted" style="margin-top: 2rem;">Keine Daten verfügbar.</p>';
+    return;
+  }
+
   results.forEach((res) => {
-    const isFav = favorites.includes(res.id);
+    const isFav = favorites.some((fav) => fav.id === res.id);
     const card = document.createElement('div');
     card.className = `result-card ${isFav ? 'is-favorite' : ''}`;
 
-    const street = res.street || '';
-    const houseNumber = res.houseNumber || '';
+    const brand = res.brand || 'Freie Tankstelle';
     const address =
-      `${street} ${houseNumber}, ${res.postCode} ${res.place}`.trim();
+      `${res.street || ''} ${res.houseNumber || ''}, ${res.postCode} ${res.place}`.trim();
 
-    const calcDetails = isCalculated
-      ? `
-        <p><strong>💶 Reiner Preis: ${res.price.toFixed(3)} €/L</strong></p>
-        <p style="margin-top: 0.5rem;">⛽ Reine Tankkosten: ${res.fuelCost.toFixed(2)} €</p>
-        <p>🚗 Fahrtkosten (${(res.totalDriveKm / 2).toFixed(1)} km Weg / ${res.totalDriveKm.toFixed(1)} km Gesamt): ${res.driveCost.toFixed(2)} €</p>
-        <p class="total-price-highlight"><strong>🔥 Echtes Total: ${res.trueTotal.toFixed(2)} €</strong></p>
-    `
-      : `<p><strong>💶 Reiner Preis: ${res.price.toFixed(3)} €/L</strong></p>`;
+    // Fallback: Tankerkönig liefert die Luftlinie (dist) standardmäßig mit
+    const rawDist = res.dist ? res.dist.toFixed(1) : '?';
+    const priceStr = res.price ? res.price.toFixed(3) : '?.???';
 
-    card.innerHTML = `
-      <div class="station-header">
-          <div class="station-name">${res.brand || 'Freie Tankstelle'}</div>
-      </div>
+    // 1. TEIL: Immer sichtbar (Name, Adresse, Preis, Entfernung)
+    let contentHTML = `
+      <div class="station-header">${brand}</div>
       <div class="station-address">📍 ${address}</div>
-      <div class="station-details">
-          ${calcDetails}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+          <span class="price-neon">${priceStr} €/L</span>
+          <span class="text-muted" style="font-size: 0.85rem;">🚗 ${rawDist} km entfernt</span>
       </div>
+    `;
+
+    // 2. TEIL: Nur im Reiter "Realer Preis" sichtbar (Detail-Berechnung)
+    if (mode === 'calc') {
+      const driveTotalKm = res.totalDriveKm ? res.totalDriveKm.toFixed(1) : '?';
+      const warning = res.isFallback
+        ? ' <span title="Schätzwert via Luftlinie (API Limit)">⚠️</span>'
+        : '';
+
+      contentHTML += `
+        <div class="total-price-highlight">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; line-height: 1.4;">
+                ⛽ Reines Tanken: ${res.fuelCost.toFixed(2)} €<br>
+                🛣️ Fahrt (${driveTotalKm} km Hin/Zurück): ${res.driveCost.toFixed(2)} € ${warning}
+            </p>
+            <p style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-top: 0.5rem;">
+                Gesamtpreis: ${res.trueTotal.toFixed(2)} €
+            </p>
+        </div>
+      `;
+    }
+
+    // Checkbox für Favoriten anfügen
+    card.innerHTML =
+      contentHTML +
+      `
       <label class="fav-checkbox">
-          <input type="checkbox" onchange="toggleFavorite('${res.id}')" ${isFav ? 'checked' : ''}> Favorit
+          <input type="checkbox" onchange="toggleFavorite('${res.id}')" ${isFav ? 'checked' : ''}>
+          <span class="star">★</span>
       </label>
     `;
+
     container.appendChild(card);
   });
 }
 
-window.toggleFavorite = function (id) {
-  if (favorites.includes(id)) {
-    favorites = favorites.filter((favId) => favId !== id);
-  } else {
-    favorites.push(id);
-  }
-  localStorage.setItem('favStations', JSON.stringify(favorites));
-  // Wir updaten die Listen sofort optisch, ohne neuen API-Aufruf
-  if (document.getElementById('rawResultsList').innerHTML !== '')
-    document.getElementById('calcBtn').click();
-};
-
-function showLoader(mainLoader, calcLoader) {
-  document.getElementById('loader').classList.toggle('hidden', !mainLoader);
-  document
-    .getElementById('loader-calc')
-    .classList.toggle('hidden', !calcLoader);
+function updateFavoritesTab() {
+  // Zeige Favoriten im 'raw' Modus an (ohne Fahrtkosten-Berechnung, da der Standort wechseln kann)
+  renderList(favorites, 'favResultsList', 'raw');
 }
 
-// --- PWA Setup & Auto-Update ---
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('sw.js')
-    .then((registration) => {
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'activated') {
-            console.log('Neues Update gefunden! Lade Seite neu...');
-            window.location.reload();
-          }
-        });
-      });
-    })
-    .catch((err) => console.log('SW Setup fehlgeschlagen', err));
+window.toggleFavorite = function (id) {
+  const index = favorites.findIndex((fav) => fav.id === id);
+
+  if (index > -1) {
+    favorites.splice(index, 1); // Entfernen
+  } else {
+    // Komplettes Tankstellen-Objekt suchen und speichern
+    const stationObj =
+      currentRawStations.find((s) => s.id === id) ||
+      currentCalcStations.find((s) => s.id === id);
+    if (stationObj) {
+      favorites.push(stationObj);
+    }
+  }
+
+  localStorage.setItem('favStationsData', JSON.stringify(favorites));
+
+  // Listen aktualisieren, ohne den Server neu anzufragen
+  if (currentRawStations.length > 0)
+    renderList(currentRawStations.slice(0, 20), 'rawResultsList', 'raw');
+  if (currentCalcStations.length > 0)
+    renderList(currentCalcStations, 'calcResultsList', 'calc');
+  updateFavoritesTab();
+};
+
+function setLoader(show, text = '') {
+  document.getElementById('loader').classList.toggle('hidden', !show);
+  if (text) document.getElementById('loader-text').innerText = text;
 }
